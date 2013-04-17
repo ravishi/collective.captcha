@@ -9,6 +9,8 @@ except ImportError: # Python < 2.5
 
 from skimpyGimpy import skimpyAPI
 
+from AccessControl import ClassSecurityInfo
+from Globals import InitializeClass
 from zope.interface import implements
 from zope.component import getUtility
 from Acquisition import aq_inner
@@ -33,6 +35,7 @@ PERIOD = 300 # captcha will be valid for PERIOD to 2*PERIOD seconds
 
 class Captcha(BrowserView):
     implements(ICaptchaView)
+    security = ClassSecurityInfo()
 
     _session_id = None
     _secret = ''
@@ -98,14 +101,17 @@ class Captcha(BrowserView):
         return '%s/@@%s/%s' % (
             aq_inner(self.context).absolute_url(), self.__name__, type)
 
+    security.declarePublic('image_tag')
     def image_tag(self):
         self._generate_session()
         return '<img src="%s" />' % (self._url('image'),)
 
+    security.declarePublic('audio_url')
     def audio_url(self):
         self._generate_session()
         return self._url('audio')
 
+    security.declarePublic('verify')
     def verify(self, input):
         try:
             words = self._generate_words()
@@ -139,3 +145,6 @@ class Captcha(BrowserView):
         self._verify_session()
         self._setheaders('audio/wav')
         return skimpyAPI.Wave(self._generate(), WAVSOUNDS).data()
+
+
+InitializeClass(Captcha)
